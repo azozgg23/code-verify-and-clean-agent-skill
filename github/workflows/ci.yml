@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect runtime
+        id: detect
+        shell: bash
+        run: |
+          if [ -f package-lock.json ]; then
+            echo "manager=npm" >> "$GITHUB_OUTPUT"
+          elif [ -f pnpm-lock.yaml ]; then
+            echo "manager=pnpm" >> "$GITHUB_OUTPUT"
+          elif [ -f yarn.lock ]; then
+            echo "manager=yarn" >> "$GITHUB_OUTPUT"
+          else
+            echo "manager=none" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Node
+        if: steps.detect.outputs.manager != 'none'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.detect.outputs.manager == 'npm'
+        run: npm ci
+
+      - name: Install dependencies (pnpm)
+        if: steps.detect.outputs.manager == 'pnpm'
+        run: |
+          corepack enable
+          pnpm install --frozen-lockfile
+
+      - name: Install dependencies (yarn)
+        if: steps.detect.outputs.manager == 'yarn'
+        run: |
+          corepack enable
+          yarn install --frozen-lockfile
+
+      - name: Run verification script
+        shell: bash
+        run: |
+          chmod +x scripts/verify-pipeline.sh
+          ./scripts/verify-pipeline.sh
+
+      - name: Shell syntax check
+        shell: bash
+        run: |
+          bash -n scripts/verify-pipeline.sh

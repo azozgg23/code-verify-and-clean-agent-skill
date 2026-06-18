@@ -1,80 +1,109 @@
 ---
-name: nextjs-verify-and-clean-skill
+name: code-verify-and-clean-skill
 description: |
-  Provides strict, comprehensive code review, verification, and cleaning specifically tailored for modern Next.js (App Router, v14/v15) and React architectures.
-  Detects and fixes hydration mismatches, Client/Server boundary serialization errors, caching pitfalls, and parallel routing bugs.
-  Use when: reviewing pull requests, fixing hydration errors, resolving Next.js build failures, auditing React Server Components (RSC), or establishing Next.js best practices.
+  Provides automated and manual verification, linting, formatting, and behavioral analysis of code.
+  Ensures code correctness, eliminates dead code, enforces clean architecture, and verifies rendering/execution
+  using testing tools, compilers, and browser-based DevTools.
+  Use when: verifying code correctness, running linters/formatters, cleaning up technical debt,
+  refactoring modules, validating UI rendering, testing API integrations, and analyzing runtime errors.
 allowed-tools:
   - Read
   - Write
   - Grep
   - Glob
-  - Bash        # To run type-checks, linters, and build commands
-  - WebFetch    # To check the latest Next.js/React documentation
-  - Browser     # To launch the app and audit the DevTools console for runtime/hydration errors
+  - Bash
+  - WebFetch
+  - Browser
 ---
 
-# Next.js & React Code Verification and Cleaning Skill
+# Code Verification & Cleaning Skill
 
-Transform Next.js codebases by enforcing strict architectural boundaries, eliminating hydration mismatches, and ensuring robust data fetching and routing patterns.
+Transform chaotic development cycles into deterministic, highly stable software systems through rigorous automated checks, strict code sanitation, and live execution audits.
 
 ## When to Use This Skill
 
-- **Pre-Merge Audits:** Validating that Server and Client components are correctly isolated.
-- **Hydration Debugging:** Fixing mismatches between server-rendered HTML and client-rendered React trees.
-- **Build Optimization:** Resolving build-time errors and reducing JavaScript bundle sizes.
-- **Routing & Caching Verification:** Ensuring Parallel Routes and Next.js 15 caching defaults are correctly implemented.
+- **Pre-Merge Verification:** Confirming changes actually compile and completely pass test suites before declaring a task finished.
+- **Code Cleaning & Sanitization:** Eliminating dead code, unused imports, redundant parameters, and refactoring deep cognitive nesting.
+- **Runtime and UI Diagnostics:** Leveraging DevTools/Browser environments to check for rendering fidelity, memory leaks, and broken network pipelines.
+- **Automated Ecosystem Linting:** Running stack-specific formatters and compilers to guarantee static compliance.
 
-## Core Principles & Verification Rules
+## Core Principles
 
-### 1. The Server/Client Boundary (Serialization)
-When code crosses the boundary from a Server Component to a Client Component, enforce strict serialization rules:
-- [cite_start]**No Functions as Props:** Props passed to a "use client" entry component must be serializable[cite: 288]. [cite_start]Functions (like `onChange` or `setShow`) are not serializable and cannot be passed directly from a Server Component[cite: 300].
-- [cite_start]**Resolution:** Define the handler inside the Client Component, or convert the function into a Server Action[cite: 300].
+### 1. The "Trust But Verify" Runtime Standard
+An expert agent never assumes written code is functional code just because it looks flawless.
+- **Execute:** Boot servers, compile modules, or run interpreters instantly.
+- **Observe:** Open target layouts via the `Browser` tool to dynamically catch visual or architectural breaks.
+- **Isolate:** Capture stack traces, errors, and system warnings directly from the environment.
 
-### 2. Hydration Mismatch Prevention
-[cite_start]Hydration errors occur when server-rendered HTML differs from what React expects on the client[cite: 930]. The Agent MUST audit components for the following triggers:
-- [cite_start]**Browser-Only APIs:** Accessing APIs like `window`, `document`, or `localStorage` during the initial render causes mismatches[cite: 934]. [cite_start]**Fix:** Wrap browser-only logic inside a `useEffect` hook to ensure it only runs on the client[cite: 1613].
-- [cite_start]**Dynamic Values:** Rendering time-dependent APIs (like `Date()`) or random values during SSR will differ between server and client[cite: 935]. **Fix:** Use `useEffect` or React's `useId` for stable identifiers.
-- [cite_start]**HTML Nesting:** Invalid HTML structure (e.g., nesting a `<div>` inside a `<p>` tag) causes the browser to modify the DOM during parsing, breaking hydration[cite: 940, 1606].
+### 2. Radical Code Cleaning (Anti-Bloat Strategy)
+Code should be lean, modern, and easily maintainable.
+- Prune unused components, imports, variables, and structural dead-ends.
+- Refactor complex `if-else` blocks or logic trees into explicit early returns.
+- Always check if custom logic can be replaced by utilizing shared global utilities.
 
-### 3. Data Fetching & Caching (Next.js 15 Standards)
-Audit data fetching strategies to align with the latest framework defaults:
-- [cite_start]**No-Store Default:** In Next.js 15 and above, the default behavior for `fetch()` requests is `no-store` (fresh request every time)[cite: 1385]. [cite_start]To cache data, explicitly use `{ cache: 'force-cache' }`[cite: 1047].
-- **Server Component Fetching:** Do not use Route Handlers to fetch data for Server Components. [cite_start]Both run securely on the server, so you don't need the additional network hop; call the logic or database directly inside the Server Component[cite: 1064].
+```markdown
+❌ Bad (Dirty & Unverified Architecture):
+try {
+  const res = await fetch('/api/data');
+  const data = await res.json();
+  this.setState({ data: data, loading: false });
+} catch(e) {}
 
-### 4. Parallel & Intercepted Routes
-When verifying advanced routing structures (folders starting with `@`):
-- [cite_start]**Missing Default Files:** Soft navigation preserves slot state, but hard navigation to a URL that doesn't match a parallel slot will fail[cite: 894]. [cite_start]**Fix:** Always ensure a `default.tsx` file is present in parallel route slots to render a fallback and prevent 404 errors[cite: 895].
+✅ Good (Cleaned, Verified, & Structured Safely):
+try {
+  const res = await fetch('/api/data');
+  if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+  const data = await res.json();
+  this.setState({ data, loading: false });
+} catch (error) {
+  logger.error("Failed to dynamically fetch operational data:", error);
+  this.setState({ error: error.message, loading: false });
+}
 
----
+### 3. Severity Tiers & Validation Markers
 
-## The AI Verification Process
+Enforce structural barriers during execution routines:
 
-### Phase 1: Static Code Analysis (Grep & Read)
-1. Scan for `"use client"` directives.
-2. Check the props being passed into these Client Components from their parent Server Components. Flag any functions or non-serializable objects.
-3. Search for `window.` or `localStorage` outside of `useEffect` blocks.
+🔴 [breaking-error] - Code crashes, fails type checks, breaks UI workflows, or exhibits dynamic security loops. (Blocks merge)
+🟡 [code-smell] - Code functions properly but introduces technical debt, bloat, or violates efficiency guidelines
+🟢 [refactored] - Cleanups automatically deployed by the agent (formatting updates, typo fixes)
+Verification & Cleaning Pipeline
+Phase 1: Static Analysis & Compiling (Automated Passes)
 
-### Phase 2: Structural Sanitation
-1. Check Parallel Routes (`@folder`) for the existence of `default.tsx`.
-2. Audit `fetch()` calls to ensure explicit caching strategies (`force-cache` or `no-store`) are defined according to business logic.
+Trigger the repository’s native formatting pipeline using Bash (e.g., npm run lint, cargo fmt, flake8).
 
-### Phase 3: Dynamic Browser Audit (Using DevTools)
-1. Run `npm run build` then `npm run start` (or `dev`) using the `Bash` tool.
-2. Use the `Browser` tool to navigate to the locally hosted application.
-3. Open the browser console and actively scan for:
-   - `Error: Text content does not match server-rendered HTML`
-   - `Error: Props must be serializable...`
-4. If errors are found, trace them back to the source file, apply the fixes outlined in the Core Principles, and re-test.
+Wipe away all auto-fixable syntax variations instantly.
 
-## Cross-Cutting Reference Modules
+If an explicit pipeline suite is present, invoke scripts/verify-pipeline.sh to automate pre-checks.
 
-When the Agent requires deeper context, it must read the following guides:
+Phase 2: Structural Sanitation Review
 
-| Topic | Reference File |
-| :--- | :--- |
-| **Hydration Fixes** | `reference/hydration-guide.md` |
-| **RSC & Serialization** | `reference/rsc-boundaries.md` |
-| **Next.js 15 Caching** | `reference/caching-v15.md` |
-| **Routing Structures** | `reference/parallel-routes.md` |
+Scan every altered module for clarity patterns:
+
+Modular Breakdown: Ensure single responsibility guidelines. If a script exceeds standard bounds, divide it into neat subsystems.
+Reusability Check: Audit cross-cutting directories. Do not reinvent components or utility math already present in the workspace.
+Phase 3: Live DevTools & Browser Audits (Frontend Verification)
+
+Whenever a client interface layer is mutated:
+
+Initialize local preview servers using Bash.
+Deploy the Browser / DevTools Tool directly to the rendered address.
+Console Inspections: Read console.error and console.warn outputs. Resolve React hydrations or hidden exceptions immediately.
+Network Validations: Trace payloads. Ensure no 400/500 triggers fire on interface actions.
+Tool-Specific Execution Guides
+Tool	Action Standard	Expected Outcome
+Bash	Run tests, linters, and native package builders	Zero errors, clear build telemetry, verified tests
+Browser / DevTools	Capture runtime layouts, read consoles, review network pipelines	Functional UI, clean logs, standard status returns
+Grep / Glob	Scan workspace structures for existing code blocks or setups	Eliminates logic duplication across modules
+WebFetch	Query framework docs for syntax specs or deprecations	Prevents structural hallucinations of system libraries
+Cross-Cutting Reference Modules
+Topic	Reference File	Key Target Areas
+Dynamic Verification	reference/devtools-verification.md	Headless browser workflows, layout auditing, console checks
+Code Cleaning Standards	reference/code-cleaning-universal.md	Technical debt elimination, structural complexity reduction
+Security Verification	reference/security-verification.md	Input injection blocks, client-side exposure auditing, token security
+Additional Resources & Assets
+reference/devtools-verification.md
+reference/code-cleaning-universal.md
+reference/security-verification.md
+assets/verification-checklist.md
+assets/review-template.md
